@@ -14,6 +14,7 @@ const POLL_HOLD_MS = 9000;       // כמה זמן מחזיקים בקשת poll �
 const DISCONNECT_MS = 30000;     // אחרי כמה זמן בלי קשר שחקן נחשב כעזב (במהלך משחק)
 const LOBBY_DISCONNECT_MS = 60000;
 const LOBBY_IDLE_MS = 10 * 60 * 1000;
+const ANSWER_GRACE_MS = 700;     // זמן חסד לתשובות שהגיעו באיחור קל ברשת
 const MAX_PLAYERS = 8;
 const MAX_QUESTIONS = 100;
 const MAX_CUSTOM_CATS = 8;
@@ -246,7 +247,7 @@ function tickInner() {
     if (room.phase === "finished") continue;
     if (room.phase === "starting" && t >= room.startAt) {
       startQuestion(room, 0);
-    } else if (room.phase === "question" && t >= room.deadline) {
+    } else if (room.phase === "question" && t >= room.deadline + ANSWER_GRACE_MS) {
       endQuestion(room);
     } else if (room.phase === "reveal" && t >= room.revealUntil) {
       if (room.q + 1 < room.questions.length) startQuestion(room, room.q + 1);
@@ -309,8 +310,12 @@ function answer(body) {
   p.lastSeen = now();
   if (room.phase !== "question") return { code: 409, body: { error: "not_open" } };
   if (p.ans) return { code: 409, body: { error: "already" } };
-  const t = now();
-  if (t > room.deadline + 400) return { code: 409, body: { error: "late" } };
+  const recv = now();
+  // הלקוח שולח את רגע הלחיצה (בשעון השרת), כדי שעיכוב ברשת לא יקנוס אותו. מגבילים ל-3 שניות אחורה.
+  let t = recv;
+  const at = Number(body.at);
+  if (isFinite(at) && at > 0) t = Math.min(recv, Math.max(at, recv - 3000));
+  if (t > room.deadline) return { code: 409, body: { error: "late" } };
   const choice = parseInt(body.choice, 10);
   if (!(choice >= 0 && choice <= 3)) return { code: 400, body: { error: "bad_choice" } };
   const elapsed = Math.min(Math.max(t - room.qStart, 0), QUESTION_MS);
