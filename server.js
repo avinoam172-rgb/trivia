@@ -91,7 +91,7 @@ function snapshot(room, pid) {
     revealUntil: room.revealUntil,
     players: room.players.map((p) => ({
       name: p.name,
-      score: p.score,
+      score: room.phase === "finished" ? p.score : 0, // הניקוד נחשף רק בסוף המשחק
       answered: !!p.ans,
       connected: connected(p),
       left: p.left,
@@ -109,7 +109,8 @@ function snapshot(room, pid) {
     const q = room.questions[room.q];
     st.reveal = {
       correct: q.correct,
-      results: room.players.map((p) => ({ choice: p.ans ? p.ans.choice : -1, points: p.ans ? p.ans.points : 0 })),
+      // נקודות של שחקנים אחרים לא נחשפות במהלך המשחק
+      results: room.players.map((p) => ({ choice: p.ans ? p.ans.choice : -1, points: p.id === pid && p.ans ? p.ans.points : 0 })),
     };
   }
   if (room.phase === "finished") {
