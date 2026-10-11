@@ -1,0 +1,12 @@
+{
+  "name": "trivia-server",
+  "version": "1.0.0",
+  "description": "שרת משחק טריוויה לשני שחקנים",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
