@@ -11,11 +11,13 @@ const QUESTION_MS = Number(process.env.QUESTION_MS) || 10000; // זמן לכל �
 const REVEAL_MS = Number(process.env.REVEAL_MS) || 2500;      // כמה זמן מציגים את התשובה הנכונה
 const START_MS = Number(process.env.START_MS) || 3000;        // ספירה לאחור לפני השאלה הראשונה
 const POLL_HOLD_MS = 9000;       // כמה זמן מחזיקים בקשת poll פתוחה
-const DISCONNECT_MS = 15000;     // אחרי כמה זמן בלי קשר שחקן נחשב כעזב (במהלך משחק)
-const LOBBY_DISCONNECT_MS = 30000;
+const DISCONNECT_MS = 30000;     // אחרי כמה זמן בלי קשר שחקן נחשב כעזב (במהלך משחק)
+const LOBBY_DISCONNECT_MS = 60000;
 const LOBBY_IDLE_MS = 10 * 60 * 1000;
 const MAX_PLAYERS = 8;
 const MAX_QUESTIONS = 100;
+const MAX_CUSTOM_CATS = 8;
+const MAX_CUSTOM_Q = 60;
 
 const rooms = new Map();
 
@@ -50,10 +52,9 @@ function shuffle(a) {
   return a;
 }
 
-function pickQuestions(catIds, perCat) {
+function pickQuestions(cats, perCat) {
   const out = [];
-  for (const id of catIds) {
-    const cat = CAT_BY_ID.get(id);
+  for (const cat of cats) {
     const chosen = shuffle(cat.questions.slice()).slice(0, perCat);
     for (const row of chosen) {
       const correctText = row[1];
@@ -64,8 +65,33 @@ function pickQuestions(catIds, perCat) {
   return shuffle(out);
 }
 
+// קטגוריות שנוצרו על ידי השחקן (נשמרות אצלו בטלפון ונשלחות עם יצירת המשחק)
+function str(x, max) {
+  return String(x == null ? "" : x).replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function cleanCustom(list) {
+  const out = [];
+  if (!Array.isArray(list)) return out;
+  for (const c of list.slice(0, MAX_CUSTOM_CATS)) {
+    if (!c || !Array.isArray(c.questions)) continue;
+    const questions = [];
+    for (const row of c.questions.slice(0, MAX_CUSTOM_Q)) {
+      if (!Array.isArray(row)) continue;
+      const text = str(row[0], 200);
+      const answers = row.slice(1, 5).map((a) => str(a, 80)).filter((a) => a.length > 0);
+      if (!text || answers.length < 2) continue;
+      if (new Set(answers.map((a) => a.toLowerCase())).size !== answers.length) continue; // תשובות זהות
+      questions.push([text].concat(answers)); // התשובה הנכונה היא הראשונה
+    }
+    if (questions.length === 0) continue;
+    out.push({ id: "u" + (out.length + 1), name: str(c.name, 24) || "הקטגוריה שלי", emoji: "\u270F\uFE0F", questions });
+  }
+  return out;
+}
+
 function makePlayer(room, name) {
-  return { id: "p" + rid(8), name: uniqueName(room, name), score: 0, ans: null, lastSeen: now(), waiting: null, left: false };
+  return { id: "p" + rid(8), name: uniqueName(room, name), score: 0, ans: null, lastSeen: now(), waiting: null, left: false, quit: false };
 }
 
 function connected(p) {
@@ -180,7 +206,6 @@ function finish(room, forfeit) {
 function playerLeft(room, p) {
   if (p.left) return;
   p.left = true;
-  p.ans = p.ans; // התשובה (אם נתן) נשמרת
   if (active(room).length < 2) {
     finish(room, true);
     return;
@@ -190,6 +215,10 @@ function playerLeft(room, p) {
 }
 
 function tick() {
+  try { tickInner(); } catch (e) { console.error("tick", e); }
+}
+
+function tickInner() {
   const t = now();
   for (const [code, room] of rooms) {
     if (room.phase === "lobby") {
@@ -234,13 +263,14 @@ function createRoom(body) {
   maxPlayers = Math.min(maxPlayers, MAX_PLAYERS);
 
   const ids = (Array.isArray(body.categories) ? body.categories : []).filter((id, i, a) => CAT_BY_ID.has(id) && a.indexOf(id) === i);
-  if (ids.length === 0) return { code: 400, body: { error: "no_categories" } };
+  const cats = ids.map((id) => CAT_BY_ID.get(id)).concat(cleanCustom(body.custom));
+  if (cats.length === 0) return { code: 400, body: { error: "no_categories" } };
 
   let perCat = parseInt(body.perCat, 10);
   if (!(perCat >= 1)) perCat = 5;
   perCat = Math.min(perCat, 20);
 
-  const questions = pickQuestions(ids, perCat);
+  const questions = pickQuestions(cats, perCat);
   if (questions.length > MAX_QUESTIONS) return { code: 400, body: { error: "too_many" } };
 
   const code = newCode();
@@ -298,6 +328,7 @@ function leave(body) {
   if (!room) return { code: 200, body: { ok: true } };
   const p = room.players.find((x) => x.id === body.player);
   if (!p) return { code: 200, body: { ok: true } };
+  p.quit = true;
   if (room.phase === "lobby") {
     room.players.splice(room.players.indexOf(p), 1);
     if (room.players.length === 0) rooms.delete(room.code);
@@ -315,6 +346,11 @@ function poll(url, res) {
   if (!p) return respond(res, 200, { error: "gone" });
   const v = Number(url.searchParams.get("v"));
   p.lastSeen = now();
+  // שחקן שהחיבור שלו נפל והוא חזר (למשל אחרי שהאפליקציה הייתה ברקע) - מחזירים אותו למשחק
+  if (p.left && !p.quit && room.phase !== "finished" && active(room).length >= 1) {
+    p.left = false;
+    bump(room);
+  }
   if (p.waiting) { // בקשה ישנה פתוחה - משחררים אותה
     clearTimeout(p.waiting.timer);
     respond(p.waiting.res, 200, snapshot(room, p.id));
@@ -343,12 +379,15 @@ function readJson(req, cb) {
   let data = "";
   req.on("data", (c) => {
     data += c;
-    if (data.length > 10000) req.destroy();
+    if (data.length > 300000) req.destroy();
   });
   req.on("end", () => {
     try { cb(JSON.parse(data || "{}")); } catch (e) { cb(null); }
   });
 }
+
+process.on("uncaughtException", (e) => console.error("uncaught", e));
+process.on("unhandledRejection", (e) => console.error("unhandled", e));
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
@@ -365,6 +404,8 @@ const server = http.createServer((req, res) => {
       categories: CATEGORIES.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji, count: c.questions.length })),
       maxPlayers: MAX_PLAYERS,
       maxQuestions: MAX_QUESTIONS,
+      maxCustomCats: MAX_CUSTOM_CATS,
+      maxCustomQuestions: MAX_CUSTOM_Q,
     });
   }
   if (req.method === "GET" && url.pathname === "/poll") return poll(url, res);
@@ -374,7 +415,8 @@ const server = http.createServer((req, res) => {
     if (!h) return respond(res, 404, { error: "not_found" });
     return readJson(req, (body) => {
       if (!body) return respond(res, 400, { error: "bad_json" });
-      const r = h(body);
+      let r;
+      try { r = h(body); } catch (e) { console.error(e); r = { code: 500, body: { error: "server" } }; }
       respond(res, r.code, r.body);
     });
   }
