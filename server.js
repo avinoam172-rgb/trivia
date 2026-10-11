@@ -1,16 +1,21 @@
-// שרת משחק טריוויה לשני שחקנים. ללא תלויות חיצוניות - רק Node.js 18 ומעלה.
+// שרת משחק טריוויה לכמה שחקנים. ללא תלויות חיצוניות - רק Node.js 18 ומעלה.
 "use strict";
 const http = require("http");
 const crypto = require("crypto");
-const QUESTIONS = require("./questions.json");
+const DATA = require("./questions.json");
+const CATEGORIES = DATA.categories;
+const CAT_BY_ID = new Map(CATEGORIES.map((c) => [c.id, c]));
 
 const PORT = process.env.PORT || 3000;
 const QUESTION_MS = Number(process.env.QUESTION_MS) || 10000; // זמן לכל שאלה
 const REVEAL_MS = Number(process.env.REVEAL_MS) || 2500;      // כמה זמן מציגים את התשובה הנכונה
 const START_MS = Number(process.env.START_MS) || 3000;        // ספירה לאחור לפני השאלה הראשונה
 const POLL_HOLD_MS = 9000;       // כמה זמן מחזיקים בקשת poll פתוחה
-const DISCONNECT_MS = 15000;     // אחרי כמה זמן בלי קשר שחקן נחשב כעזב
-const LOBBY_IDLE_MS = 5 * 60 * 1000;
+const DISCONNECT_MS = 15000;     // אחרי כמה זמן בלי קשר שחקן נחשב כעזב (במהלך משחק)
+const LOBBY_DISCONNECT_MS = 30000;
+const LOBBY_IDLE_MS = 10 * 60 * 1000;
+const MAX_PLAYERS = 8;
+const MAX_QUESTIONS = 100;
 
 const rooms = new Map();
 
@@ -30,6 +35,13 @@ function cleanName(n) {
   return n || "שחקן";
 }
 
+function uniqueName(room, name) {
+  let n = cleanName(name);
+  let base = n, i = 2;
+  while (room.players.some((p) => p.name === n)) n = base + " (" + i++ + ")";
+  return n;
+}
+
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -38,62 +50,73 @@ function shuffle(a) {
   return a;
 }
 
-function pickQuestions(n) {
-  const idx = shuffle(QUESTIONS.map((_, i) => i)).slice(0, n);
-  return idx.map((i) => {
-    const row = QUESTIONS[i];
-    const correctText = row[1];
-    const answers = shuffle(row.slice(1));
-    return { text: row[0], answers, correct: answers.indexOf(correctText) };
-  });
+function pickQuestions(catIds, perCat) {
+  const out = [];
+  for (const id of catIds) {
+    const cat = CAT_BY_ID.get(id);
+    const chosen = shuffle(cat.questions.slice()).slice(0, perCat);
+    for (const row of chosen) {
+      const correctText = row[1];
+      const answers = shuffle(row.slice(1));
+      out.push({ text: row[0], answers, correct: answers.indexOf(correctText), cat: cat.emoji + " " + cat.name });
+    }
+  }
+  return shuffle(out);
 }
 
-function makePlayer(name) {
-  return { id: "p" + rid(8), name: cleanName(name), score: 0, ans: null, lastSeen: now(), waiting: null };
+function makePlayer(room, name) {
+  return { id: "p" + rid(8), name: uniqueName(room, name), score: 0, ans: null, lastSeen: now(), waiting: null, left: false };
 }
 
 function connected(p) {
   return !!p.waiting || now() - p.lastSeen < DISCONNECT_MS;
 }
 
+const active = (room) => room.players.filter((p) => !p.left);
+
 // ---- מצב מותאם לשחקן ----
 function snapshot(room, pid) {
   const me = room.players.find((p) => p.id === pid);
-  const opp = room.players.find((p) => p.id !== pid) || null;
   const st = {
     v: room.v,
     now: now(),
     phase: room.phase,
     code: room.code,
-    rounds: room.rounds,
+    rounds: room.questions.length,
+    maxPlayers: room.maxPlayers,
     q: room.q,
     startAt: room.startAt,
     qStart: room.qStart,
     deadline: room.deadline,
     revealUntil: room.revealUntil,
-    me: { name: me.name, score: me.score, answered: !!me.ans, choice: me.ans ? me.ans.choice : -1 },
-    opp: opp ? { name: opp.name, score: opp.score, answered: !!opp.ans, connected: connected(opp) } : null,
+    players: room.players.map((p) => ({
+      name: p.name,
+      score: p.score,
+      answered: !!p.ans,
+      connected: connected(p),
+      left: p.left,
+      me: p.id === pid,
+    })),
     question: null,
     reveal: null,
     result: null,
   };
   if ((room.phase === "question" || room.phase === "reveal") && room.q >= 0) {
     const q = room.questions[room.q];
-    st.question = { text: q.text, answers: q.answers };
+    st.question = { text: q.text, answers: q.answers, cat: q.cat };
   }
-  if (room.phase === "reveal" && opp) {
+  if (room.phase === "reveal") {
     const q = room.questions[room.q];
     st.reveal = {
       correct: q.correct,
-      me: { choice: me.ans ? me.ans.choice : -1, points: me.ans ? me.ans.points : 0 },
-      opp: { choice: opp.ans ? opp.ans.choice : -1, points: opp.ans ? opp.ans.points : 0 },
+      results: room.players.map((p) => ({ choice: p.ans ? p.ans.choice : -1, points: p.ans ? p.ans.points : 0 })),
     };
   }
   if (room.phase === "finished") {
-    let winner = "tie";
-    if (room.forfeitBy) winner = room.forfeitBy === pid ? "opp" : "me";
-    else if (opp) winner = me.score > opp.score ? "me" : me.score < opp.score ? "opp" : "tie";
-    st.result = { winner, forfeit: !!room.forfeitBy };
+    let rank;
+    if (room.forfeit) rank = me && !me.left ? 1 : room.players.length;
+    else rank = 1 + room.players.filter((p) => p.score > me.score).length;
+    st.result = { forfeit: !!room.forfeit, rank, total: room.players.length };
   }
   return st;
 }
@@ -146,38 +169,58 @@ function endQuestion(room) {
   bump(room);
 }
 
-function finish(room, forfeitBy) {
+function finish(room, forfeit) {
   room.phase = "finished";
-  room.forfeitBy = forfeitBy || null;
+  room.forfeit = !!forfeit;
   bump(room);
+}
+
+// שחקן עזב באמצע משחק: ממשיכים אם נשארו לפחות שניים, אחרת המשחק נגמר
+function playerLeft(room, p) {
+  if (p.left) return;
+  p.left = true;
+  p.ans = p.ans; // התשובה (אם נתן) נשמרת
+  if (active(room).length < 2) {
+    finish(room, true);
+    return;
+  }
+  if (room.phase === "question" && active(room).every((x) => x.ans)) endQuestion(room);
+  else bump(room);
 }
 
 function tick() {
   const t = now();
   for (const [code, room] of rooms) {
     if (room.phase === "lobby") {
-      if (t - room.touched > LOBBY_IDLE_MS || (!connected(room.players[0]) && t - room.players[0].lastSeen > 60000)) {
-        rooms.delete(code);
+      let changed = false;
+      for (const p of room.players.slice()) {
+        if (!p.waiting && t - p.lastSeen > LOBBY_DISCONNECT_MS) {
+          room.players.splice(room.players.indexOf(p), 1);
+          changed = true;
+        }
       }
+      if (room.players.length === 0 || t - room.touched > LOBBY_IDLE_MS) rooms.delete(code);
+      else if (changed) bump(room);
       continue;
     }
     if (room.phase === "finished") {
       if (t - room.touched > 2 * 60 * 1000) rooms.delete(code);
       continue;
     }
-    // עזיבה באמצע משחק
-    const gone = room.players.find((p) => !connected(p));
-    if (gone) {
-      finish(room, gone.id);
-      continue;
+    for (const p of active(room)) {
+      if (!connected(p)) {
+        playerLeft(room, p);
+        if (room.phase === "finished") break;
+      }
     }
+    if (room.phase === "finished") continue;
     if (room.phase === "starting" && t >= room.startAt) {
       startQuestion(room, 0);
     } else if (room.phase === "question" && t >= room.deadline) {
       endQuestion(room);
     } else if (room.phase === "reveal" && t >= room.revealUntil) {
-      if (room.q + 1 < room.rounds) startQuestion(room, room.q + 1);
-      else finish(room, null);
+      if (room.q + 1 < room.questions.length) startQuestion(room, room.q + 1);
+      else finish(room, false);
     }
   }
 }
@@ -185,18 +228,29 @@ setInterval(tick, 100);
 
 // ---- פעולות ----
 function createRoom(body) {
+  let maxPlayers = parseInt(body.maxPlayers, 10);
+  if (!(maxPlayers >= 2)) maxPlayers = 2;
+  maxPlayers = Math.min(maxPlayers, MAX_PLAYERS);
+
+  const ids = (Array.isArray(body.categories) ? body.categories : []).filter((id, i, a) => CAT_BY_ID.has(id) && a.indexOf(id) === i);
+  if (ids.length === 0) return { code: 400, body: { error: "no_categories" } };
+
+  let perCat = parseInt(body.perCat, 10);
+  if (!(perCat >= 1)) perCat = 5;
+  perCat = Math.min(perCat, 20);
+
+  const questions = pickQuestions(ids, perCat);
+  if (questions.length > MAX_QUESTIONS) return { code: 400, body: { error: "too_many" } };
+
   const code = newCode();
   if (!code) return { code: 503, body: { error: "busy" } };
-  let rounds = parseInt(body.rounds, 10);
-  if (![5, 10, 15, 20].includes(rounds)) rounds = 10;
-  rounds = Math.min(rounds, QUESTIONS.length);
-  const p = makePlayer(body.name);
+
   const room = {
-    code, rounds, players: [p], phase: "lobby", v: 1, q: -1,
-    questions: pickQuestions(rounds),
-    startAt: 0, qStart: 0, deadline: 0, revealUntil: 0,
-    forfeitBy: null, touched: now(),
+    code, maxPlayers, players: [], phase: "lobby", v: 1, q: -1, questions,
+    startAt: 0, qStart: 0, deadline: 0, revealUntil: 0, forfeit: false, touched: now(),
   };
+  const p = makePlayer(room, body.name);
+  room.players.push(p);
   rooms.set(code, room);
   return { code: 200, body: { room: code, player: p.id } };
 }
@@ -204,12 +258,14 @@ function createRoom(body) {
 function joinRoom(body) {
   const room = rooms.get(String(body.room || "").trim());
   if (!room) return { code: 404, body: { error: "not_found" } };
-  if (room.phase !== "lobby") return { code: 409, body: { error: room.players.length >= 2 ? "full" : "started" } };
-  if (room.players.length >= 2) return { code: 409, body: { error: "full" } };
-  const p = makePlayer(body.name);
+  if (room.phase !== "lobby") return { code: 409, body: { error: "started" } };
+  if (room.players.length >= room.maxPlayers) return { code: 409, body: { error: "full" } };
+  const p = makePlayer(room, body.name);
   room.players.push(p);
-  room.phase = "starting";
-  room.startAt = now() + START_MS;
+  if (room.players.length >= room.maxPlayers) {
+    room.phase = "starting";
+    room.startAt = now() + START_MS;
+  }
   bump(room);
   return { code: 200, body: { room: room.code, player: p.id } };
 }
@@ -231,7 +287,7 @@ function answer(body) {
   // 1000 נקודות לתשובה מיידית, יורד עד 200 לתשובה בסוף הזמן. טעות = 0
   const points = correct ? Math.round(200 + 800 * (1 - elapsed / QUESTION_MS)) : 0;
   p.ans = { choice, points, elapsed };
-  if (room.players.every((x) => x.ans)) endQuestion(room); // שניהם ענו - ממשיכים מיד
+  if (active(room).every((x) => x.ans)) endQuestion(room); // כולם ענו - ממשיכים מיד
   else bump(room);
   return { code: 200, body: { ok: true } };
 }
@@ -241,8 +297,13 @@ function leave(body) {
   if (!room) return { code: 200, body: { ok: true } };
   const p = room.players.find((x) => x.id === body.player);
   if (!p) return { code: 200, body: { ok: true } };
-  if (room.phase === "lobby") rooms.delete(room.code);
-  else if (room.phase !== "finished") finish(room, p.id);
+  if (room.phase === "lobby") {
+    room.players.splice(room.players.indexOf(p), 1);
+    if (room.players.length === 0) rooms.delete(room.code);
+    else bump(room);
+  } else if (room.phase !== "finished") {
+    playerLeft(room, p);
+  }
   return { code: 200, body: { ok: true } };
 }
 
@@ -295,7 +356,15 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
   if (req.method === "GET" && url.pathname === "/") {
-    return respond(res, 200, { ok: true, rooms: rooms.size, questions: QUESTIONS.length });
+    const total = CATEGORIES.reduce((s, c) => s + c.questions.length, 0);
+    return respond(res, 200, { ok: true, rooms: rooms.size, categories: CATEGORIES.length, questions: total });
+  }
+  if (req.method === "GET" && url.pathname === "/categories") {
+    return respond(res, 200, {
+      categories: CATEGORIES.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji, count: c.questions.length })),
+      maxPlayers: MAX_PLAYERS,
+      maxQuestions: MAX_QUESTIONS,
+    });
   }
   if (req.method === "GET" && url.pathname === "/poll") return poll(url, res);
   if (req.method === "POST") {
@@ -312,4 +381,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.keepAliveTimeout = 65000;
-server.listen(PORT, () => console.log("Trivia server listening on port " + PORT + " (" + QUESTIONS.length + " questions)"));
+server.listen(PORT, () => {
+  const total = CATEGORIES.reduce((s, c) => s + c.questions.length, 0);
+  console.log("Trivia server listening on port " + PORT + " (" + CATEGORIES.length + " categories, " + total + " questions)");
+});
