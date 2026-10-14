@@ -2,6 +2,8 @@
 "use strict";
 const http = require("http");
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const DATA = require("./questions.json");
 const CATEGORIES = DATA.categories;
 const CAT_BY_ID = new Map(CATEGORIES.map((c) => [c.id, c]));
@@ -391,6 +393,42 @@ function readJson(req, cb) {
   });
 }
 
+// ---- אתר המשחק (קבצים מהתיקייה public) ----
+const PUBLIC_DIR = path.join(__dirname, "public");
+const MIME = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+};
+const STATIC = new Map();
+const NO_CACHE = new Set(["/index.html", "/sw.js", "/manifest.json"]);
+try {
+  for (const f of fs.readdirSync(PUBLIC_DIR)) {
+    const full = path.join(PUBLIC_DIR, f);
+    if (!fs.statSync(full).isFile()) continue;
+    STATIC.set("/" + f, { type: MIME[path.extname(f).toLowerCase()] || "application/octet-stream", buf: fs.readFileSync(full) });
+  }
+} catch (e) {
+  console.error("לא נמצאה תיקיית public - האתר לא יוגש", e.message);
+}
+
+function serveStatic(res, pathname, headOnly) {
+  const f = STATIC.get(pathname);
+  if (!f) return false;
+  res.writeHead(200, {
+    "Content-Type": f.type,
+    "Content-Length": f.buf.length,
+    "Cache-Control": NO_CACHE.has(pathname) ? "no-cache" : "public, max-age=86400",
+    "X-Content-Type-Options": "nosniff",
+  });
+  res.end(headOnly ? undefined : f.buf);
+  return true;
+}
+
 process.on("uncaughtException", (e) => console.error("uncaught", e));
 process.on("unhandledRejection", (e) => console.error("unhandled", e));
 
@@ -400,10 +438,13 @@ const server = http.createServer((req, res) => {
     res.writeHead(204, { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Allow-Methods": "GET,POST" });
     return res.end();
   }
-  if (req.method === "GET" && url.pathname === "/") {
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/") {
+    // דפדפן מקבל את האתר, כל השאר (בדיקות תקינות וכד') מקבלים JSON כמו קודם
+    if (String(req.headers.accept || "").includes("text/html") && serveStatic(res, "/index.html", req.method === "HEAD")) return;
     const total = CATEGORIES.reduce((s, c) => s + c.questions.length, 0);
     return respond(res, 200, { ok: true, rooms: rooms.size, categories: CATEGORIES.length, questions: total });
   }
+  if ((req.method === "GET" || req.method === "HEAD") && serveStatic(res, url.pathname, req.method === "HEAD")) return;
   if (req.method === "GET" && url.pathname === "/categories") {
     return respond(res, 200, {
       categories: CATEGORIES.map((c) => ({ id: c.id, name: c.name, emoji: c.emoji, count: c.questions.length })),
