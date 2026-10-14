@@ -1,0 +1,1222 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0B1026">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="טריוויה">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<title>טריוויה</title>
+<style>
+:root{
+  --bg-top:#0B1026;--bg-bottom:#1F2F6B;--card:#16204A;--stroke:#3949AB;--gold:#FFC107;--orange:#FF9800;
+  --green:#2E7D32;--red:#C62828;--white:#fff;--muted:#9FA8DA;--dark:#1A1A1A;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100%;background:var(--bg-top)}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Heebo","Arial Hebrew",Arial,sans-serif;
+  color:var(--white);background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom)) fixed;
+  min-height:100vh;min-height:100dvh;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;
+  overscroll-behavior-y:none;
+}
+input,textarea{-webkit-user-select:text;user-select:text}
+#app{
+  max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  padding:calc(18px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom));
+}
+.col{display:flex;flex-direction:column;gap:0}
+.center{align-items:center;justify-content:center;text-align:center}
+.grow{flex:1}
+.full{width:100%}
+h1,h2,h3,p{margin:0}
+.title{font-size:30px;font-weight:800;color:var(--gold);text-align:center}
+.sec{font-size:18px;font-weight:700;text-align:start;margin-top:22px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.mt6{margin-top:6px}.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}.mt26{margin-top:26px}
+.banner{width:min(100%,300px);aspect-ratio:1/1;object-fit:cover;border-radius:22px;display:block}
+.btn{
+  display:block;width:100%;border:0;border-radius:16px;padding:16px;font:inherit;font-size:20px;font-weight:800;
+  text-align:center;cursor:pointer;color:var(--dark);background:var(--gold);margin-top:10px;transition:opacity .08s;
+}
+.btn:active{opacity:.7}
+.btn.big{font-size:22px;margin-top:16px}
+.btn.outline{background:var(--card);color:var(--white);border:2px solid var(--stroke);font-size:18px}
+.btn.green{background:var(--green);color:var(--white);font-size:18px}
+.btn.danger{color:#EF9A9A;font-size:15px}
+.btn.off{opacity:.4;pointer-events:none}
+.inp{
+  width:100%;background:var(--card);border:2px solid var(--stroke);border-radius:14px;color:var(--white);
+  font:inherit;font-size:18px;text-align:center;padding:14px 16px;outline:none;margin-top:16px;
+}
+.inp::placeholder{color:var(--muted)}
+.inp:focus{border-color:var(--gold)}
+textarea.inp{resize:none;min-height:70px;font-size:16px;margin-top:0}
+.inp.f16{font-size:16px;margin-top:10px}
+.stepper{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}
+.stepper button{
+  font:inherit;font-size:28px;font-weight:800;color:var(--white);background:var(--card);border:2px solid var(--stroke);
+  border-radius:14px;padding:4px 26px;cursor:pointer;
+}
+.stepper button:active{opacity:.7}
+.stepper span{min-width:70px;text-align:center;font-size:34px;font-weight:800;color:var(--gold)}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.chip{
+  font:inherit;font-size:15px;font-weight:800;color:var(--white);background:var(--card);border:2px solid var(--stroke);
+  border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center;
+}
+.chip.sel{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+.chip:active{opacity:.7}
+.chiprow{display:flex;justify-content:center;gap:10px;margin-top:8px}
+.chiprow .chip{border-radius:20px;font-size:20px;padding:10px 24px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-top:22px}
+.link{background:none;border:0;color:var(--gold);font:inherit;font-size:14px;font-weight:800;padding:6px 10px;cursor:pointer}
+.summary{text-align:center;font-weight:800;font-size:16px;margin-top:18px}
+.code{
+  font-size:56px;font-weight:800;color:var(--gold);letter-spacing:.15em;padding:14px 24px 14px calc(24px + .15em);background:var(--card);
+  border:2px solid var(--stroke);border-radius:20px;margin-top:10px;direction:ltr;
+}
+.plist{width:100%}
+.prow{
+  background:var(--card);border:1px solid var(--stroke);border-radius:12px;padding:10px 16px;font-size:18px;font-weight:800;
+  text-align:center;margin-top:8px;
+}
+.prow.me{color:var(--gold)}
+.count{font-size:96px;font-weight:800;color:var(--orange);margin-top:30px;line-height:1}
+.row{
+  display:block;width:100%;background:var(--card);border:2px solid var(--stroke);border-radius:14px;padding:14px 16px;
+  color:var(--white);font:inherit;font-size:18px;font-weight:800;text-align:center;margin-top:10px;cursor:pointer;
+}
+.row:active{opacity:.7}
+.qrow{
+  display:block;width:100%;background:var(--card);border:1px solid var(--stroke);border-radius:12px;padding:10px 14px;
+  color:var(--white);font:inherit;font-size:16px;text-align:start;margin-top:8px;cursor:pointer;line-height:1.4;
+}
+.qrow b{color:#81C784;font-weight:600}
+/* משחק */
+.sb{display:grid;gap:6px}
+.sc{
+  background:var(--card);border:1px solid var(--stroke);border-radius:14px;padding:8px 6px;text-align:center;min-width:0;
+}
+.sc.me{border:2px solid var(--gold)}
+.sc .n{font-size:13px;font-weight:800;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc.me .n{color:var(--gold)}
+.sc .s{font-size:15px;font-weight:800;color:var(--muted);margin-top:2px}
+.sc .s.ok{color:#81C784}
+.sc.left{opacity:.5}
+.meta{text-align:center;font-size:14px;font-weight:800;color:var(--muted);margin-top:12px}
+.trow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.tbar{flex:1;height:12px;border-radius:6px;background:rgba(255,255,255,.2);overflow:hidden;display:flex}
+.tbar i{display:block;height:100%;border-radius:6px;background:#43A047;width:100%}
+.tbar i.mid{background:#FF9800}.tbar i.low{background:#E53935}
+#ttext{min-width:44px;min-height:32px;line-height:32px;text-align:center;font-size:26px;font-weight:800}
+.qcard{
+  background:var(--card);border:2px solid var(--stroke);border-radius:18px;padding:20px;min-height:100px;font-size:22px;
+  font-weight:800;text-align:center;margin-top:12px;display:flex;align-items:center;justify-content:center;line-height:1.35;
+}
+.qcard.pop{animation:pop .25s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.ans{
+  display:block;width:100%;background:var(--card);border:2px solid var(--stroke);border-radius:14px;padding:14px 18px;
+  color:var(--white);font:inherit;font-size:18px;text-align:start;margin-top:9px;cursor:pointer;line-height:1.35;
+  transition:opacity .08s;
+}
+.ans:active{opacity:.7}
+.ans.sel{background:var(--orange);border-color:var(--gold)}
+.ans.dim{opacity:.55}
+.ans.ok{background:var(--green);border-color:#66BB6A;opacity:1}
+.ans.bad{background:var(--red);border-color:#EF5350;opacity:1}
+.ans.lock{pointer-events:none;cursor:default}
+.ans .who{font-size:14px;opacity:.85}
+.status{text-align:center;font-weight:800;font-size:16px;margin-top:14px;white-space:pre-line;min-height:24px;color:var(--muted)}
+/* סיום */
+.big-emoji{font-size:64px;line-height:1.1}
+.rank{
+  display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--stroke);border-radius:14px;
+  padding:10px 14px;margin-top:8px;width:100%;
+}
+.rank.me{border:2px solid var(--gold)}
+.rank .m{min-width:40px;font-size:22px;font-weight:800;text-align:center}
+.rank .nm{flex:1;font-size:17px;font-weight:800;text-align:start}
+.rank.me .nm{color:var(--gold)}
+.rank .sc2{font-size:20px;font-weight:800}
+/* חלונות */
+#toast{
+  position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:50;
+  background:#000c;color:#fff;padding:12px 18px;border-radius:14px;font-size:16px;font-weight:700;max-width:90%;
+  text-align:center;opacity:0;pointer-events:none;transition:opacity .2s;
+}
+#toast.show{opacity:1}
+#modal{
+  position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;
+}
+#modal.show{display:flex}
+.box{
+  background:#1b2757;border:2px solid var(--stroke);border-radius:20px;padding:20px;width:100%;max-width:440px;
+  max-height:90vh;max-height:90dvh;overflow:auto;
+}
+.box h3{font-size:20px;font-weight:800;color:var(--gold);text-align:center}
+.box p{margin-top:10px;text-align:center;color:#dfe3ff;font-size:16px}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btns .btn{margin-top:0;font-size:17px;padding:13px 8px}
+.hint{
+  background:var(--card);border:1px solid var(--stroke);border-radius:14px;padding:10px 14px;font-size:14px;color:#dfe3ff;
+  text-align:center;margin-top:14px;line-height:1.5;width:100%;position:relative;
+}
+.hint button.x{position:absolute;top:2px;left:6px;background:none;border:0;color:var(--muted);font-size:20px;padding:4px 8px;cursor:pointer}
+.spin{
+  width:46px;height:46px;border:5px solid rgba(255,255,255,.2);border-top-color:var(--gold);border-radius:50%;
+  animation:sp 1s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"><div class="box" id="box"></div></div>
+<div id="toast"></div>
+<script>
+"use strict";
+(function () {
+
+// ================================================================ קבועים וזיכרון מקומי
+
+var LETTERS = ["א", "ב", "ג", "ד"];
+var PER_CAT_OPTIONS = [3, 5, 8, 10];
+var MAX_CUSTOM_CATS = 8, MAX_CUSTOM_Q = 60;
+
+var mem = {};
+var store = {
+  get: function (k, d) {
+    try {
+      var v = localStorage.getItem("trivia_" + k);
+      if (v === null) return k in mem ? mem[k] : d;
+      return JSON.parse(v);
+    } catch (e) { return k in mem ? mem[k] : d; }
+  },
+  set: function (k, v) {
+    mem[k] = v;
+    try { localStorage.setItem("trivia_" + k, JSON.stringify(v)); } catch (e) {}
+  },
+  del: function (k) {
+    delete mem[k];
+    try { localStorage.removeItem("trivia_" + k); } catch (e) {}
+  }
+};
+
+var S = {
+  screen: "home",
+  room: null, player: null,
+  cur: null, offset: 0,
+  pendingChoice: -1, shownQ: -2, shownPhase: "",
+  pollGen: 0, pollAbort: null,
+  busy: false, reqGen: 0,
+  cats: null, serverMaxPlayers: 8, serverMaxQuestions: 100,
+  maxPlayers: store.get("maxPlayers", 2), perCat: store.get("perCat", 5),
+  selected: new Set(store.get("cats", [])),
+  customFromCreate: false, editCat: null,
+  gameKey: "",
+  joinCode: ""
+};
+
+var $app = document.getElementById("app");
+var timerFill = null, timerText = null, startingText = null;
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function myName() { var n = String(store.get("name", "") || "").trim(); return n || "שחקן"; }
+
+// ================================================================ הודעות, חלונות, צלילים
+
+var toastTimer = null;
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove("show"); }, 3200);
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.remove("show");
+  document.getElementById("box").innerHTML = "";
+}
+function openModal(html) {
+  document.getElementById("box").innerHTML = html;
+  document.getElementById("modal").classList.add("show");
+}
+function modalOpen() { return document.getElementById("modal").classList.contains("show"); }
+
+var audio = null;
+function unlockAudio() {
+  try {
+    if (!audio) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audio = new AC();
+    }
+    if (audio && audio.state === "suspended") audio.resume();
+  } catch (e) {}
+}
+document.addEventListener("pointerdown", unlockAudio, { passive: true });
+document.addEventListener("touchend", unlockAudio, { passive: true });
+
+function tone(freq, start, dur, vol) {
+  if (!audio) return;
+  try {
+    var o = audio.createOscillator(), g = audio.createGain();
+    o.type = "sine"; o.frequency.value = freq;
+    var t0 = audio.currentTime + start;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.2, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(audio.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  } catch (e) {}
+}
+function beep(ok) {
+  if (ok) { tone(660, 0, 0.14, 0.22); tone(880, 0.13, 0.2, 0.22); }
+  else { tone(300, 0, 0.18, 0.22); tone(220, 0.16, 0.25, 0.22); }
+}
+function beepTick() { tone(700, 0, 0.06, 0.15); }
+
+// ================================================================ תקשורת עם השרת
+
+function api(path, opts) {
+  opts = opts || {};
+  var method = opts.method || "GET";
+  var timeout = opts.timeout || 12000;
+  var attempts = opts.attempts || (method === "GET" ? 3 : 1);
+  var attempt = 0;
+  function once() {
+    var ctl = new AbortController();
+    if (opts.register) opts.register(ctl);
+    var timer = setTimeout(function () { ctl.abort(); }, timeout);
+    var init = { method: method, signal: ctl.signal, cache: "no-store", headers: { "Accept": "application/json" } };
+    if (opts.body) {
+      init.body = JSON.stringify(opts.body);
+      init.headers["Content-Type"] = "application/json; charset=utf-8";
+    }
+    return fetch(path, init).then(function (r) {
+      return r.text().then(function (t) {
+        clearTimeout(timer);
+        if (!t) return r.status >= 400 ? { error: "http_" + r.status } : {};
+        try { return JSON.parse(t); } catch (e) { return { error: "http_" + r.status }; }
+      });
+    }, function (e) {
+      clearTimeout(timer);
+      throw e;
+    });
+  }
+  function run() {
+    return once().catch(function (e) {
+      attempt++;
+      if (opts.aborted && opts.aborted()) throw e;
+      if (attempt < attempts) return sleep(800).then(run);
+      throw e;
+    });
+  }
+  return run();
+}
+
+function errorText(code) {
+  if (code === "not_found") return "לא נמצא משחק עם הקוד הזה";
+  if (code === "full") return "המשחק כבר מלא";
+  if (code === "started") return "המשחק כבר התחיל";
+  if (code === "no_categories") return "בחר לפחות קטגוריה אחת";
+  if (code === "too_many") return "יותר מדי שאלות, הקטן את המספר";
+  return "שגיאה בשרת (" + code + ")";
+}
+var NO_CONNECTION = "אין חיבור לשרת. בדוק את החיבור לאינטרנט ונסה שוב";
+
+function warmUp() {
+  api("/categories", { timeout: 15000 }).then(function (res) {
+    if (res && res.categories && S.screen !== "create") applyCategories(res);
+  }).catch(function () {});
+}
+function applyCategories(res) {
+  S.cats = res.categories;
+  S.serverMaxPlayers = res.maxPlayers || 8;
+  S.serverMaxQuestions = res.maxQuestions || 100;
+  if (S.selected.size === 0) S.cats.forEach(function (c) { S.selected.add(c.id); });
+}
+
+// ================================================================ ניווט וכפתור "חזרה"
+
+var guard = false;
+function installGuard() {
+  try {
+    history.replaceState({ g: 0 }, "");
+    history.pushState({ g: 1 }, "");
+    guard = true;
+  } catch (e) {}
+}
+window.addEventListener("popstate", function () {
+  if (!guard) return;
+  if (S.screen === "home" && !modalOpen()) { guard = false; history.back(); return; }
+  try { history.pushState({ g: 1 }, ""); } catch (e) {}
+  onBack();
+});
+
+function onBack() {
+  if (modalOpen()) { closeModal(); return; }
+  var s = S.screen;
+  if (s === "starting" || s === "game") confirmLeave();
+  else if (s === "editcat") { persistEdit(); showCustomList(); }
+  else if (s === "custom") { if (S.customFromCreate && S.cats) showCreate(); else showHome(); }
+  else if (s !== "home") showHome();
+}
+
+// ================================================================ מסך הבית
+
+var installPrompt = null;
+window.addEventListener("beforeinstallprompt", function (e) {
+  e.preventDefault();
+  installPrompt = e;
+  if (S.screen === "home") showHome();
+});
+function isStandalone() {
+  return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+}
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+function installHint() {
+  if (isStandalone() || store.get("hintClosed", false)) return "";
+  if (isIOS()) {
+    return '<div class="hint">להתקנה כאפליקציה: לחץ על כפתור השיתוף ⬆️ בספארי ואז "הוסף למסך הבית"' +
+      '<button class="x" data-a="closehint">×</button></div>';
+  }
+  if (installPrompt) {
+    return '<div class="hint">אפשר להתקין את המשחק כאפליקציה' +
+      '<button class="btn green mt8" data-a="installapp" style="font-size:16px;padding:10px">התקן</button>' +
+      '<button class="x" data-a="closehint">×</button></div>';
+  }
+  return "";
+}
+
+function setScreen(name, html, opts) {
+  stopTick();
+  timerFill = null; timerText = null; startingText = null;
+  S.screen = name;
+  S.gameKey = "";
+  $app.innerHTML = html;
+  window.scrollTo(0, 0);
+}
+
+function leaveQuietly() {
+  S.pollGen++;
+  if (S.pollAbort) { try { S.pollAbort.abort(); } catch (e) {} S.pollAbort = null; }
+  stopTick();
+  if (S.room) {
+    var body = { room: S.room, player: S.player };
+    api("/leave", { method: "POST", body: body, timeout: 8000 }).catch(function () {});
+  }
+  store.del("session");
+  S.room = null; S.player = null; S.cur = null;
+  S.shownQ = -2; S.shownPhase = ""; S.pendingChoice = -1;
+}
+
+function showHome() {
+  leaveQuietly();
+  S.busy = false;
+  S.reqGen++;
+  closeModal();
+  setScreen("home",
+    '<div class="col center grow">' +
+    '<img class="banner" src="/banner.jpg" alt="" draggable="false">' +
+    installHint() +
+    '<input id="name" class="inp" maxlength="16" placeholder="השם שלך" autocomplete="off" value="' + esc(store.get("name", "")) + '">' +
+    '<button class="btn big" data-a="create">צור משחק</button>' +
+    '<button class="btn outline" data-a="join">הצטרף למשחק</button>' +
+    '<button class="btn outline" data-a="mine">✏️ הקטגוריות שלי</button>' +
+    '</div>');
+}
+
+function readName() {
+  var el = document.getElementById("name");
+  if (el) {
+    var n = el.value.trim().slice(0, 16);
+    store.set("name", n);
+  }
+  return myName();
+}
+
+// ================================================================ יצירת משחק
+
+function showCreate() {
+  if (S.cats) { showCreateForm(); return; }
+  setScreen("create",
+    '<div class="col center grow"><div class="title">יצירת משחק</div>' +
+    '<p class="muted mt20" style="font-size:17px">טוען קטגוריות...</p><div class="spin mt20"></div>' +
+    '<button class="btn outline mt26" data-a="home">חזרה</button></div>');
+  api("/categories", { timeout: 15000 }).then(function (res) {
+    if (S.screen !== "create") return;
+    if (!res || !res.categories) throw new Error("bad");
+    applyCategories(res);
+    showCreateForm();
+  }).catch(function () {
+    if (S.screen !== "create") return;
+    toast(NO_CONNECTION);
+    showHome();
+  });
+}
+
+function loadCustom() {
+  var a = store.get("custom", []);
+  return Array.isArray(a) ? a : [];
+}
+function saveCustom(a) { store.set("custom", a); }
+
+function showCreateForm() {
+  if (S.maxPlayers > S.serverMaxPlayers) S.maxPlayers = S.serverMaxPlayers;
+  if (S.maxPlayers < 2) S.maxPlayers = 2;
+  var valid = new Set(S.cats.map(function (c) { return c.id; }));
+  var customs = loadCustom().filter(function (c) { return c && c.questions && c.questions.length > 0; });
+  customs.forEach(function (c) { valid.add(c.id); });
+  S.selected.forEach(function (id) { if (!valid.has(id)) S.selected.delete(id); });
+
+  var html = '<div class="title">יצירת משחק</div>' +
+    '<div class="sec">כמה שחקנים?</div>' +
+    '<div class="stepper"><button data-a="minus">−</button><span id="pc">' + S.maxPlayers + '</span><button data-a="plus">+</button></div>' +
+    '<div class="head"><div class="sec" style="margin:0">קטגוריות</div><button class="link" data-a="toggleall">בחר הכל / נקה</button></div>' +
+    '<div class="chips">';
+  S.cats.forEach(function (c) {
+    html += '<button class="chip" data-a="cat" data-id="' + esc(c.id) + '">' + esc(c.emoji) + " " + esc(c.name) + "</button>";
+  });
+  html += '</div><div class="sec">✏️ הקטגוריות שלי</div>';
+  if (customs.length === 0) {
+    html += '<p class="muted small mt8">עוד לא יצרת קטגוריות. אפשר לכתוב שאלות ותשובות משלך!</p>';
+  } else {
+    html += '<div class="chips">';
+    customs.forEach(function (c) {
+      html += '<button class="chip" data-a="cat" data-id="' + esc(c.id) + '">✏️ ' + esc(c.name) + " (" + c.questions.length + ")</button>";
+    });
+    html += "</div>";
+  }
+  html += '<button class="btn outline mt10" data-a="managecats" style="font-size:16px">➕ יצירה וניהול של קטגוריות</button>' +
+    '<div class="sec">כמה שאלות מכל קטגוריה?</div><div class="chiprow">';
+  PER_CAT_OPTIONS.forEach(function (v) {
+    html += '<button class="chip" data-a="percat" data-v="' + v + '">' + v + "</button>";
+  });
+  html += '</div><div class="summary" id="summary"></div>' +
+    '<button class="btn big" id="createbtn" data-a="docreate">צור משחק</button>' +
+    '<button class="btn outline" data-a="home">חזרה</button>';
+  setScreen("create", html);
+  refreshCreateUi();
+}
+
+function totalQuestions() {
+  var total = 0;
+  S.cats.forEach(function (c) { if (S.selected.has(c.id)) total += Math.min(S.perCat, c.count); });
+  loadCustom().forEach(function (c) {
+    if (c && S.selected.has(c.id) && c.questions) total += Math.min(S.perCat, c.questions.length);
+  });
+  return total;
+}
+
+function refreshCreateUi() {
+  document.querySelectorAll('[data-a="cat"]').forEach(function (el) {
+    el.classList.toggle("sel", S.selected.has(el.getAttribute("data-id")));
+  });
+  document.querySelectorAll('[data-a="percat"]').forEach(function (el) {
+    el.classList.toggle("sel", Number(el.getAttribute("data-v")) === S.perCat);
+  });
+  var pc = document.getElementById("pc");
+  if (pc) pc.textContent = S.maxPlayers;
+  var total = totalQuestions();
+  var ok = S.selected.size > 0 && total <= S.serverMaxQuestions;
+  var sm = document.getElementById("summary");
+  if (S.selected.size === 0) { sm.textContent = "בחר לפחות קטגוריה אחת"; sm.style.color = "var(--orange)"; }
+  else if (total > S.serverMaxQuestions) { sm.textContent = 'סה"כ ' + total + " שאלות. זה יותר מדי (מקסימום " + S.serverMaxQuestions + ")"; sm.style.color = "#EF5350"; }
+  else { sm.textContent = 'סה"כ ' + total + " שאלות, " + S.selected.size + " קטגוריות"; sm.style.color = "#fff"; }
+  document.getElementById("createbtn").classList.toggle("off", !ok);
+}
+
+function toggleAllCats() {
+  var allSel = S.cats.every(function (c) { return S.selected.has(c.id); });
+  S.cats.forEach(function (c) { if (allSel) S.selected.delete(c.id); else S.selected.add(c.id); });
+  refreshCreateUi();
+}
+
+function createGame() {
+  if (S.busy) return;
+  if (S.selected.size === 0 || totalQuestions() > S.serverMaxQuestions) return;
+  S.busy = true;
+  var myReq = ++S.reqGen;
+  var cats = Array.from(S.selected);
+  store.set("maxPlayers", S.maxPlayers);
+  store.set("perCat", S.perCat);
+  store.set("cats", cats);
+  var mine = loadCustom();
+  var ids = [], custom = [];
+  cats.forEach(function (id) {
+    if (id.indexOf("c_") === 0) {
+      mine.forEach(function (c) { if (c && c.id === id) custom.push({ name: c.name, questions: c.questions }); });
+    } else ids.push(id);
+  });
+  toast("יוצר משחק...");
+  api("/create", { method: "POST", timeout: 20000, body: { name: myName(), maxPlayers: S.maxPlayers, perCat: S.perCat, categories: ids, custom: custom } })
+    .then(function (res) {
+      if (myReq !== S.reqGen) { if (!res.error) cancelRoom(res.room, res.player); return; }
+      S.busy = false;
+      if (res.error) { toast(errorText(res.error)); return; }
+      enterRoom(res.room, res.player);
+    }).catch(function () {
+      if (myReq !== S.reqGen) return;
+      S.busy = false;
+      toast(NO_CONNECTION);
+    });
+}
+
+function cancelRoom(r, p) {
+  api("/leave", { method: "POST", body: { room: r, player: p }, timeout: 8000 }).catch(function () {});
+}
+
+function enterRoom(room, player) {
+  document.getElementById("toast").classList.remove("show");
+  S.room = room; S.player = player; S.cur = null;
+  store.set("session", { room: room, player: player });
+  showLobby();
+  startPolling(false);
+}
+
+// ================================================================ הצטרפות
+
+function showJoin() {
+  setScreen("join",
+    '<div class="col center grow">' +
+    '<div style="font-size:56px">🔑</div>' +
+    '<div class="title mt6">הצטרפות למשחק</div>' +
+    '<p class="muted mt6" style="font-size:16px">הכנס את הקוד שקיבלת מהחבר</p>' +
+    '<input id="name" class="inp" maxlength="16" placeholder="השם שלך" autocomplete="off" style="margin-top:20px" value="' + esc(store.get("name", "")) + '">' +
+    '<input id="code" class="inp" style="font-size:28px;letter-spacing:.2em;margin-top:12px" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="קוד המשחק" autocomplete="off" value="' + esc(S.joinCode) + '">' +
+    '<button class="btn big" style="margin-top:22px" data-a="dojoin">הצטרף</button>' +
+    '<button class="btn outline mt12" data-a="home">חזרה</button>' +
+    '</div>');
+}
+
+function joinGame(code) {
+  if (S.busy) return;
+  code = String(code || "").replace(/\D/g, "");
+  if (!code) { toast("הכנס קוד משחק"); return; }
+  toast("מצטרף...");
+  S.busy = true;
+  var myReq = ++S.reqGen;
+  api("/join", { method: "POST", timeout: 20000, body: { room: code, name: myName() } })
+    .then(function (res) {
+      if (myReq !== S.reqGen) { if (!res.error) cancelRoom(res.room, res.player); return; }
+      S.busy = false;
+      if (res.error) { toast(errorText(res.error)); return; }
+      S.joinCode = "";
+      enterRoom(res.room, res.player);
+    }).catch(function () {
+      if (myReq !== S.reqGen) return;
+      S.busy = false;
+      toast(NO_CONNECTION);
+    });
+}
+
+// ================================================================ חדר המתנה
+
+function showLobby() {
+  var st = S.cur;
+  var players = st ? st.players : null;
+  var max = st ? st.maxPlayers : S.maxPlayers;
+  var joined = players ? players.length : 1;
+  var html = '<div class="col center grow">' +
+    '<div class="muted" style="font-size:18px">קוד המשחק</div>' +
+    '<div class="code">' + esc(S.room) + "</div>" +
+    '<div class="mt20" style="font-size:20px;font-weight:800">שחקנים ' + joined + " מתוך " + max + "</div>" +
+    '<div class="plist">';
+  if (players) {
+    players.forEach(function (p) {
+      html += '<div class="prow' + (p.me ? " me" : "") + '">' + esc(p.name) + (p.me ? "  (אתה)" : "") + "</div>";
+    });
+  } else {
+    html += '<div class="prow me">' + esc(myName()) + "  (אתה)</div>";
+  }
+  html += '</div><p class="muted mt16" style="font-size:15px">המשחק יתחיל כשכל השחקנים יצטרפו</p>' +
+    '<button class="btn big" style="margin-top:26px" data-a="share">שתף את הקוד</button>' +
+    '<button class="btn outline mt12" data-a="home">יציאה</button></div>';
+  setScreen("lobby", html);
+}
+
+function shareCode() {
+  var link = location.origin + "/?room=" + S.room;
+  var msg = "בוא לשחק איתי טריוויה! הקוד למשחק: " + S.room + "\n" + link;
+  if (navigator.share) {
+    navigator.share({ text: msg }).catch(function () {});
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(function () { toast("הקוד והקישור הועתקו"); }, function () {
+      window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+    });
+  } else {
+    window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
+  }
+}
+
+// ================================================================ סנכרון מול השרת
+
+function startPolling(silent) {
+  var gen = ++S.pollGen;
+  if (S.pollAbort) { try { S.pollAbort.abort(); } catch (e) {} }
+  var r = S.room, p = S.player;
+  var first = true;
+  (async function () {
+    var v = -1, fails = 0;
+    while (gen === S.pollGen) {
+      var t0 = Date.now();
+      try {
+        var st = await api("/poll?room=" + encodeURIComponent(r) + "&player=" + encodeURIComponent(p) + "&v=" + v, {
+          timeout: 16000,
+          attempts: 1,
+          register: function (ctl) { if (gen === S.pollGen) S.pollAbort = ctl; },
+          aborted: function () { return gen !== S.pollGen; }
+        });
+        if (gen !== S.pollGen) return;
+        fails = 0;
+        if (st.error) { fatal(gen, silent && first ? null : "המשחק כבר לא קיים"); return; }
+        var nv = st.v == null ? v : st.v;
+        if (nv === v) {
+          if (Date.now() - t0 < 300) await sleep(300);
+          continue;
+        }
+        v = nv;
+        first = false;
+        onState(st);
+      } catch (e) {
+        if (gen !== S.pollGen) return;
+        fails++;
+        if (fails >= 6) { fatal(gen, "החיבור לשרת אבד"); return; }
+        await sleep(1000);
+      }
+    }
+  })();
+}
+
+function fatal(gen, msg) {
+  if (gen !== S.pollGen) return;
+  if (msg) toast(msg);
+  showHome();
+}
+
+function onState(st) {
+  S.cur = st;
+  S.offset = (st.now || Date.now()) - Date.now();
+  var phase = st.phase;
+  if (phase === "lobby") showLobby();
+  else if (phase === "starting") showStarting();
+  else if (phase === "question" || phase === "reveal") {
+    if (phase !== "question" || st.q !== S.shownQ) S.pendingChoice = -1;
+    showGame();
+  } else if (phase === "finished") showFinal();
+}
+
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState !== "visible") return;
+  if (S.room && (S.screen === "lobby" || S.screen === "starting" || S.screen === "game")) startPolling(false);
+});
+window.addEventListener("pageshow", function (e) {
+  if (e.persisted && S.room && (S.screen === "lobby" || S.screen === "starting" || S.screen === "game")) startPolling(false);
+});
+
+// ================================================================ ספירה לאחור
+
+function showStarting() {
+  var st = S.cur;
+  var names = st.players.map(function (p) { return esc(p.name); }).join("  •  ");
+  setScreen("starting",
+    '<div class="col center grow">' +
+    '<div class="title" style="font-size:32px">המשחק מתחיל!</div>' +
+    '<div class="mt16" style="font-size:20px;font-weight:800">' + names + "</div>" +
+    '<p class="muted mt6" style="font-size:15px">' + st.rounds + " שאלות, 10 שניות לכל שאלה</p>" +
+    '<div class="count" id="count">3</div>' +
+    '<p class="muted mt20" style="font-size:15px;line-height:1.5">ככל שתענו מהר יותר, תקבלו יותר נקודות.<br>הניקוד מוסתר עד הסוף, אז אף אחד לא יודע מי מוביל!</p>' +
+    '</div>');
+  startingText = document.getElementById("count");
+  startTick();
+  updateTimer();
+}
+
+// ================================================================ מסך השאלה
+
+function meIndex(players) {
+  for (var i = 0; i < players.length; i++) if (players[i].me) return i;
+  return 0;
+}
+
+function scoreboardHtml(players, showAnswered) {
+  var n = players.length;
+  var perRow = n <= 4 ? n : Math.ceil(n / 2);
+  var html = '<div class="sb" style="grid-template-columns:repeat(' + perRow + ',1fr)">';
+  players.forEach(function (p) {
+    var label = p.left ? "—" : (showAnswered ? (p.answered ? "✓ ענה" : "חושב...") : "•••");
+    html += '<div class="sc' + (p.me ? " me" : "") + (p.left ? " left" : "") + '">' +
+      '<div class="n">' + esc(p.name) + (p.left ? " (עזב)" : "") + "</div>" +
+      '<div class="s' + (showAnswered && p.answered && !p.left ? " ok" : "") + '">' + label + "</div></div>";
+  });
+  return html + "</div>";
+}
+
+function whoChose(players, results, answerIdx, meIdx) {
+  var names = [], count = 0;
+  for (var i = 0; i < players.length; i++) {
+    if (i === meIdx) continue;
+    if (results[i] && results[i].choice === answerIdx) {
+      count++;
+      if (count <= 2) names.push(esc(players[i].name));
+    }
+  }
+  var s = names.join(", ");
+  if (count > 2) s += " +" + (count - 2);
+  return s;
+}
+
+function statusInfo(players, reveal, meIdx, myChoice, myPoints, iAnswered) {
+  if (reveal) {
+    var s1, cls = "";
+    if (myPoints > 0) { s1 = "נכון! +" + myPoints + " נקודות"; cls = "#81C784"; }
+    else if (myChoice < 0) { s1 = "לא ענית בזמן"; cls = "var(--orange)"; }
+    else { s1 = "טעית. 0 נקודות"; cls = "#EF5350"; }
+    return { text: s1 + "\nהניקוד הכולל יתגלה בסוף המשחק!", color: cls };
+  }
+  var answered = 0, active = 0;
+  players.forEach(function (p, i) {
+    if (p.left) return;
+    active++;
+    if (p.answered || (i === meIdx && S.pendingChoice >= 0)) answered++;
+  });
+  if (iAnswered) {
+    var rem = active - answered;
+    return { text: rem > 0 ? "ענית! ממתין ל-" + rem + (rem === 1 ? " שחקן נוסף..." : " שחקנים נוספים...") : "ענית!", color: "var(--muted)" };
+  }
+  if (answered > 0) return { text: "כבר ענו " + answered + " מתוך " + active + ", מהרו!", color: "var(--orange)" };
+  return { text: " ", color: "var(--muted)" };
+}
+
+function applyStatus(players, reveal, meIdx, myChoice, myPoints, iAnswered) {
+  var el = document.getElementById("status");
+  if (!el) return;
+  var si = statusInfo(players, reveal, meIdx, myChoice, myPoints, iAnswered);
+  el.textContent = si.text;
+  el.style.color = si.color;
+}
+
+function showGame() {
+  var wasGame = S.screen === "game";
+  var st = S.cur;
+  var reveal = st.phase === "reveal";
+  var players = st.players;
+  var qo = st.question;
+  var rv = st.reveal;
+  var results = rv ? rv.results : null;
+  var qIndex = st.q;
+  var meIdx = meIndex(players);
+  var me = players[meIdx];
+
+  var correct = rv ? rv.correct : -1;
+  var myChoice, myPoints = 0;
+  if (reveal && results) {
+    myChoice = results[meIdx] ? results[meIdx].choice : -1;
+    myPoints = results[meIdx] ? results[meIdx].points : 0;
+  } else {
+    myChoice = S.pendingChoice;
+  }
+  var iAnswered = reveal ? myChoice >= 0 : (me.answered || S.pendingChoice >= 0);
+
+  // אותה שאלה ושום דבר שמשפיע על מה שאני רואה לא השתנה: מעדכנים רק את לוח השחקנים והסטטוס
+  var key = st.phase + ":" + qIndex + ":" + S.pendingChoice + ":" + (S.pendingChoice >= 0 ? "p" : String(!!me.answered));
+  var sbBox = document.getElementById("sb");
+  if (wasGame && sbBox && key === S.gameKey) {
+    sbBox.innerHTML = scoreboardHtml(players, !reveal);
+    applyStatus(players, reveal, meIdx, myChoice, myPoints, iAnswered);
+    return;
+  }
+
+  var newQuestion = qIndex !== S.shownQ || (S.shownPhase !== "question" && !reveal);
+  var html = '<div id="sb">' + scoreboardHtml(players, !reveal) + "</div>" +
+    '<div class="meta">' + esc(qo.cat) + "   •   שאלה " + (qIndex + 1) + " מתוך " + st.rounds + "</div>" +
+    '<div class="trow"><div class="tbar"><i id="tfill" style="width:' + (reveal ? 0 : 100) + '%"></i></div><span id="ttext">' + (reveal ? "" : "10") + "</span></div>" +
+    '<div class="qcard' + (newQuestion && !reveal ? " pop" : "") + '">' + esc(qo.text) + "</div><div id=\"answers\">";
+  qo.answers.forEach(function (a, i) {
+    var cls = "ans", extra = "";
+    if (reveal) {
+      cls += " lock";
+      if (i === correct) cls += " ok";
+      else if (i === myChoice) cls += " bad";
+      else cls += " dim";
+      if (results) {
+        var who = whoChose(players, results, i, meIdx);
+        if (who) extra = ' <span class="who">• ' + who + "</span>";
+      }
+    } else if (i === S.pendingChoice) {
+      cls += " sel lock";
+    } else if (iAnswered) {
+      cls += " dim lock";
+    }
+    html += '<button class="' + cls + '" data-a="answer" data-i="' + i + '">' + LETTERS[i] + ".&nbsp; " + esc(a) + extra + "</button>";
+  });
+  html += '</div><div class="status" id="status"> </div>';
+  setScreen("game", html);
+  timerFill = document.getElementById("tfill");
+  timerText = document.getElementById("ttext");
+  S.gameKey = key;
+  applyStatus(players, reveal, meIdx, myChoice, myPoints, iAnswered);
+  if (reveal && S.shownPhase !== "reveal") beep(myPoints > 0);
+  S.shownQ = qIndex;
+  S.shownPhase = st.phase;
+  startTick();
+  updateTimer();
+}
+
+function onAnswerClicked(pos) {
+  var st = S.cur;
+  if (!st || st.phase !== "question") return;
+  if (S.pendingChoice >= 0) return;
+  S.pendingChoice = pos;
+  var r = S.room, p = S.player, gen = S.pollGen;
+  var clickAt = Date.now() + S.offset;   // רגע הלחיצה בשעון השרת
+  // קודם כול שולחים לשרת, ורק אחר כך מעדכנים את המסך
+  api("/answer", { method: "POST", timeout: 10000, body: { room: r, player: p, choice: pos, at: clickAt } })
+    .then(function (res) {
+      if (res.error && res.error !== "already") throw new Error(res.error);
+    }).catch(function () {
+      if (gen !== S.pollGen) return;
+      S.pendingChoice = -1;
+      toast("התשובה לא נקלטה");
+      if (S.cur && S.cur.phase === "question") showGame();
+    });
+
+  document.querySelectorAll("#answers .ans").forEach(function (el, i) {
+    el.classList.add("lock");
+    if (i === pos) el.classList.add("sel");
+    else el.classList.add("dim");
+  });
+  beepTick();
+  var meIdx = meIndex(st.players);
+  applyStatus(st.players, false, meIdx, pos, 0, true);
+  S.gameKey = st.phase + ":" + st.q + ":" + S.pendingChoice + ":p";
+}
+
+// ================================================================ סיום
+
+function showFinal() {
+  var st = S.cur;
+  S.pollGen++;
+  if (S.pollAbort) { try { S.pollAbort.abort(); } catch (e) {} S.pollAbort = null; }
+  store.del("session");
+  S.room = null; S.player = null;
+  closeModal();
+
+  var players = st.players;
+  var res = st.result || {};
+  var rank = res.rank || 1;
+  var forfeit = !!res.forfeit;
+  var total = players.length;
+  var myScore = 0;
+  players.forEach(function (p) { if (p.me) myScore = p.score; });
+  var same = players.filter(function (p) { return p.score === myScore; }).length;
+
+  var emoji, title;
+  if (rank === 1 && forfeit) { emoji = "🏆"; title = "ניצחת! כולם עזבו"; }
+  else if (rank === 1 && same > 1) { emoji = "🤝"; title = "תיקו בצמרת!"; }
+  else if (rank === 1) { emoji = "🏆"; title = "ניצחת!"; }
+  else if (rank === 2 && total === 2) { emoji = "😕"; title = "הפסדת"; }
+  else {
+    emoji = rank === 2 ? "🥈" : (rank === 3 ? "🥉" : "🙂");
+    title = "מקום " + rank + " מתוך " + total;
+  }
+
+  var sorted = players.slice().sort(function (a, b) { return b.score - a.score; });
+  var html = '<div class="col center grow"><div class="big-emoji">' + emoji + "</div>" +
+    '<div class="title mt6" style="font-size:34px">' + esc(title) + "</div>" +
+    '<div class="muted mt20" style="font-size:16px;font-weight:800">הדירוג הסופי</div>';
+  sorted.forEach(function (p) {
+    var r = 1 + players.filter(function (x) { return x.score > p.score; }).length;
+    var medal = r === 1 ? "🥇" : (r === 2 ? "🥈" : (r === 3 ? "🥉" : r + "."));
+    html += '<div class="rank' + (p.me ? " me" : "") + '"><span class="m">' + medal + "</span>" +
+      '<span class="nm">' + esc(p.name) + (p.left ? " (עזב)" : "") + (p.me ? "  (אתה)" : "") + "</span>" +
+      '<span class="sc2">' + p.score + "</span></div>";
+  });
+  html += '<button class="btn big" style="margin-top:28px" data-a="home">משחק חדש</button></div>';
+  setScreen("final", html);
+  beep(rank === 1);
+}
+
+// ================================================================ טיימר
+
+var tickId = null;
+function startTick() {
+  if (tickId) clearInterval(tickId);
+  tickId = setInterval(updateTimer, 50);
+}
+function stopTick() {
+  if (tickId) { clearInterval(tickId); tickId = null; }
+}
+function updateTimer() {
+  var st = S.cur;
+  if (!st) return;
+  var nowS = Date.now() + S.offset;
+  if (st.phase === "starting" && startingText) {
+    var rem = st.startAt - nowS;
+    var s = Math.ceil(Math.max(rem, 0) / 1000);
+    startingText.textContent = String(Math.max(s, 1));
+  } else if (st.phase === "question" && timerFill && timerText) {
+    var total = st.deadline - st.qStart;
+    if (total <= 0) total = 10000;
+    var left = st.deadline - nowS;
+    var frac = Math.max(0, Math.min(1, left / total));
+    timerFill.style.width = (frac * 100).toFixed(1) + "%";
+    timerFill.className = frac > 0.5 ? "" : (frac > 0.25 ? "mid" : "low");
+    timerText.textContent = String(Math.ceil(Math.max(left, 0) / 1000));
+  }
+}
+
+// ================================================================ יציאה
+
+function confirmLeave() {
+  if (modalOpen()) return;
+  openModal('<h3>לצאת מהמשחק?</h3><p>תצא מהמשחק, והשאר ימשיכו בלעדיך.</p>' +
+    '<div class="btns"><button class="btn" style="background:var(--red);color:#fff" data-a="leaveyes">יציאה</button>' +
+    '<button class="btn outline" data-a="closemodal">המשך לשחק</button></div>');
+}
+
+// ================================================================ קטגוריות אישיות
+
+function showCustomList() {
+  var all = loadCustom();
+  var html = '<div class="title">✏️ הקטגוריות שלי</div>' +
+    '<p class="muted small mt8">כאן אפשר ליצור קטגוריות משלך: כותבים שאלות ותשובות, והן נשמרות במכשיר שלך. ' +
+    "אחר כך בוחרים אותן ביצירת משחק, וכל השחקנים יקבלו את השאלות.</p>";
+  all.forEach(function (c, i) {
+    var n = c.questions ? c.questions.length : 0;
+    html += '<button class="row" data-a="editcat" data-i="' + i + '">✏️ ' + esc(c.name) + "<br>" + n + (n === 1 ? " שאלה" : " שאלות") + "</button>";
+  });
+  if (all.length === 0) html += '<p class="muted mt26" style="font-size:16px;text-align:center">עוד אין לך קטגוריות</p>';
+  html += '<button class="btn" style="margin-top:22px" data-a="newcat">➕ קטגוריה חדשה</button>' +
+    '<button class="btn outline" data-a="customback">חזרה</button>';
+  setScreen("custom", html);
+}
+
+function showEditCat(cat, isNew) {
+  S.editCat = cat;
+  var qs = cat.questions;
+  var html = '<div class="title" style="font-size:28px">' + (isNew ? "קטגוריה חדשה" : "עריכת קטגוריה") + "</div>" +
+    '<div class="sec" style="margin-top:16px">שם הקטגוריה</div>' +
+    '<input id="catname" class="inp f16" style="margin-top:8px;font-size:18px" maxlength="24" placeholder="למשל: כדורגל, המשפחה שלנו..." autocomplete="off" value="' + esc(cat.name) + '">' +
+    '<div class="sec">השאלות (' + qs.length + "/" + MAX_CUSTOM_Q + ")</div>";
+  qs.forEach(function (row, i) {
+    html += '<button class="qrow" data-a="editq" data-i="' + i + '">' + (i + 1) + ". " + esc(row[0]) + "<br><b>✔ " + esc(row[1]) + "</b></button>";
+  });
+  if (qs.length === 0) html += '<p class="muted mt8" style="font-size:15px">עוד אין שאלות. לחץ על "הוסף שאלה"</p>';
+  html += '<button class="btn" style="margin-top:16px;font-size:18px" data-a="addq">➕ הוסף שאלה</button>' +
+    '<button class="btn green mt12" data-a="savecat">שמור וסיים</button>' +
+    '<button class="btn outline danger" data-a="delcat">מחק קטגוריה</button>';
+  setScreen("editcat", html);
+}
+
+function syncCatName() {
+  var el = document.getElementById("catname");
+  if (el && S.editCat) S.editCat.name = el.value.trim();
+}
+
+function findCustom(arr, id) {
+  for (var i = 0; i < arr.length; i++) if (arr[i] && arr[i].id === id) return i;
+  return -1;
+}
+
+function persistEdit() {
+  syncCatName();
+  var c = S.editCat;
+  if (!c) return;
+  var arr = loadCustom();
+  var idx = findCustom(arr, c.id);
+  var empty = c.questions.length === 0 && !c.name.trim();
+  if (empty) {
+    if (idx >= 0) arr.splice(idx, 1);
+  } else {
+    if (!c.name.trim()) c.name = "הקטגוריה שלי";
+    if (idx >= 0) arr[idx] = c; else arr.push(c);
+  }
+  saveCustom(arr);
+}
+
+function deleteEditCat() {
+  var c = S.editCat;
+  if (!c) return;
+  var arr = loadCustom();
+  var idx = findCustom(arr, c.id);
+  if (idx >= 0) arr.splice(idx, 1);
+  saveCustom(arr);
+  S.selected.delete(c.id);
+  S.editCat = null;
+}
+
+function showQuestionDialog(index) {
+  syncCatName();
+  var ex = index >= 0 ? S.editCat.questions[index] : null;
+  function v(i) { return ex && ex[i] ? esc(ex[i]) : ""; }
+  openModal('<h3>' + (index >= 0 ? "עריכת שאלה" : "שאלה חדשה") + "</h3>" +
+    '<textarea id="fq" class="inp" maxlength="200" placeholder="השאלה" style="margin-top:14px">' + v(0) + "</textarea>" +
+    '<input id="f1" class="inp f16" maxlength="80" placeholder="✔ התשובה הנכונה" value="' + v(1) + '">' +
+    '<input id="f2" class="inp f16" maxlength="80" placeholder="תשובה שגויה 1" value="' + v(2) + '">' +
+    '<input id="f3" class="inp f16" maxlength="80" placeholder="תשובה שגויה 2 (לא חובה)" value="' + v(3) + '">' +
+    '<input id="f4" class="inp f16" maxlength="80" placeholder="תשובה שגויה 3 (לא חובה)" value="' + v(4) + '">' +
+    '<p class="muted small" style="margin-top:8px">התשובות יתערבבו אוטומטית במשחק</p>' +
+    '<div class="btns"><button class="btn" data-a="saveq" data-i="' + index + '">שמור</button>' +
+    '<button class="btn outline" data-a="closemodal">ביטול</button>' +
+    (index >= 0 ? '<button class="btn outline danger" data-a="delq" data-i="' + index + '" style="font-size:15px">מחק</button>' : "") +
+    "</div>");
+}
+
+function saveQuestion(index) {
+  function val(id) { return document.getElementById(id).value.trim(); }
+  var q = val("fq"), ok = val("f1"), a1 = val("f2"), a2 = val("f3"), a3 = val("f4");
+  if (!q || !ok || !a1) { toast("צריך לכתוב שאלה, תשובה נכונה ולפחות תשובה שגויה אחת"); return; }
+  var answers = [ok, a1];
+  if (a2) answers.push(a2);
+  if (a3) answers.push(a3);
+  var seen = {};
+  for (var i = 0; i < answers.length; i++) {
+    var k = answers[i].toLowerCase();
+    if (seen[k]) { toast("יש שתי תשובות זהות, כל תשובה צריכה להיות שונה"); return; }
+    seen[k] = true;
+  }
+  var row = [q].concat(answers);
+  if (index >= 0) S.editCat.questions[index] = row; else S.editCat.questions.push(row);
+  persistEdit();
+  closeModal();
+  showEditCat(S.editCat, false);
+}
+
+// ================================================================ אירועים
+
+document.addEventListener("click", function (e) {
+  var el = e.target.closest ? e.target.closest("[data-a]") : null;
+  if (!el) return;
+  var a = el.getAttribute("data-a");
+  switch (a) {
+    case "home": showHome(); break;
+    case "create": readName(); showCreate(); break;
+    case "join": readName(); showJoin(); break;
+    case "mine": readName(); S.customFromCreate = false; showCustomList(); break;
+    case "closehint": store.set("hintClosed", true); showHome(); break;
+    case "installapp":
+      if (installPrompt) { installPrompt.prompt(); installPrompt = null; }
+      break;
+    case "minus": if (S.maxPlayers > 2) { S.maxPlayers--; refreshCreateUi(); } break;
+    case "plus": if (S.maxPlayers < S.serverMaxPlayers) { S.maxPlayers++; refreshCreateUi(); } break;
+    case "toggleall": toggleAllCats(); break;
+    case "cat": {
+      var id = el.getAttribute("data-id");
+      if (S.selected.has(id)) S.selected.delete(id); else S.selected.add(id);
+      refreshCreateUi();
+      break;
+    }
+    case "percat": S.perCat = Number(el.getAttribute("data-v")); refreshCreateUi(); break;
+    case "managecats": S.customFromCreate = true; showCustomList(); break;
+    case "docreate": createGame(); break;
+    case "dojoin": joinGame(document.getElementById("code").value); break;
+    case "share": shareCode(); break;
+    case "answer": onAnswerClicked(Number(el.getAttribute("data-i"))); break;
+    case "leaveyes": closeModal(); showHome(); break;
+    case "closemodal": closeModal(); break;
+    case "customback": if (S.customFromCreate && S.cats) showCreate(); else showHome(); break;
+    case "newcat":
+      if (loadCustom().length >= MAX_CUSTOM_CATS) { toast("אפשר ליצור עד " + MAX_CUSTOM_CATS + " קטגוריות"); break; }
+      showEditCat({ id: "c_" + Date.now(), name: "", questions: [] }, true);
+      break;
+    case "editcat": {
+      var c = loadCustom()[Number(el.getAttribute("data-i"))];
+      if (c) showEditCat(JSON.parse(JSON.stringify(c)), false);
+      break;
+    }
+    case "addq":
+      syncCatName();
+      if (S.editCat.questions.length >= MAX_CUSTOM_Q) { toast("אפשר עד " + MAX_CUSTOM_Q + " שאלות בקטגוריה"); break; }
+      showQuestionDialog(-1);
+      break;
+    case "editq": showQuestionDialog(Number(el.getAttribute("data-i"))); break;
+    case "saveq": saveQuestion(Number(el.getAttribute("data-i"))); break;
+    case "delq":
+      S.editCat.questions.splice(Number(el.getAttribute("data-i")), 1);
+      persistEdit(); closeModal(); showEditCat(S.editCat, false);
+      break;
+    case "savecat": persistEdit(); showCustomList(); break;
+    case "delcat":
+      syncCatName();
+      openModal('<h3>למחוק את הקטגוריה?</h3><p>כל השאלות בה יימחקו.</p>' +
+        '<div class="btns"><button class="btn" style="background:var(--red);color:#fff" data-a="delcatyes">מחק</button>' +
+        '<button class="btn outline" data-a="closemodal">ביטול</button></div>');
+      break;
+    case "delcatyes": closeModal(); deleteEditCat(); showCustomList(); break;
+  }
+});
+
+document.addEventListener("input", function (e) {
+  if (e.target && e.target.id === "name") {
+    store.set("name", e.target.value.trim().slice(0, 16));
+  } else if (e.target && e.target.id === "code") {
+    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 5);
+  }
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Enter") return;
+  var t = e.target;
+  if (!t) return;
+  if (t.id === "code") joinGame(t.value);
+  else if (t.id === "name" || t.id === "catname") t.blur();
+});
+
+// ================================================================ התחלה
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("/sw.js").catch(function () {});
+  });
+}
+
+installGuard();
+
+(function boot() {
+  var params = new URLSearchParams(location.search);
+  var codeParam = (params.get("room") || "").replace(/\D/g, "").slice(0, 5);
+  if (codeParam) {
+    try { history.replaceState({ g: 1 }, "", location.pathname); } catch (e) {}
+  }
+  var sess = store.get("session", null);
+  if (sess && sess.room && sess.player && !codeParam) {
+    // חזרה למשחק שהיינו בו (למשל אחרי שהאפליקציה נסגרה ברקע)
+    S.room = sess.room; S.player = sess.player;
+    setScreen("resume", '<div class="col center grow"><div class="spin"></div><p class="muted mt20" style="font-size:17px">מתחבר מחדש למשחק...</p>' +
+      '<button class="btn outline mt26" data-a="home">ביטול</button></div>');
+    startPolling(true);
+    warmUp();
+    return;
+  }
+  if (sess) store.del("session");
+  if (codeParam) {
+    S.joinCode = codeParam;
+    showJoin();
+  } else {
+    showHome();
+  }
+  warmUp();
+})();
+
+})();
+</script>
+</body>
+</html>
